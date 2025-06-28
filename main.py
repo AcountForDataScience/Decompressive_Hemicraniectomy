@@ -444,8 +444,7 @@ def NeurologicalOutcomeFunc(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10):
   #, NeurologicalOutcomeProbabilityAnswer
   #, NeurologicalOutcomeProbabilityPercent
 
-# Дані
-
+###### Recommendations
 df = pd.read_csv('GPT_hemicraniectomy_with_scale.csv')
 
 # Створимо колонку ефективності (1 = вижив + без ускладнень)
@@ -486,7 +485,7 @@ def recommend_best_treatment(patient_data: dict):
         effectiveness_results[treatment_name] = predicted_proba
 
     # Вибір найефективнішого
-    best_treatment = max(effectiveness_results, key=effectiveness_results.get)
+    best_treatment = max(effectiveness_results)
 
     #print("📊 Прогнозована ефективність по кожному типу лікування:")
     for t_name, score in effectiveness_results.items():
@@ -499,6 +498,9 @@ def recommend_best_treatment(patient_data: dict):
     return best_treatment, effectiveness_results_str_dic
 
 
+## Bot ##
+
+# @title
 bot = telebot.TeleBot('8127929017:AAE-Ly5A79-FGk6qmZUCu5Pniz6cmV_1mQY')
 #t.me/MedAi_Stroke_bot
 
@@ -521,7 +523,6 @@ def process_Password_step(message):
       msg = bot.reply_to(message, 'You are welcome. Please press Next to continue', reply_markup=markup)
       bot.register_next_step_handler(msg, process_Eye_Opening_step)
     else:
-      print(Password_message)
       msg = bot.reply_to(message, '❌ Incorrect password. Please try again.')
       bot.register_next_step_handler(msg, process_Password_step)
   except Exception as e:
@@ -750,9 +751,6 @@ def predict_DecompressiveHemicraniectomy_complication_step(message):
       ComplicationsProbabilityAnswer, ComplicationsProbabilityPercent = RandomForestComplicationsProbabilityFunc(Age, Sex, Stroke_Type, Time_to_Surgery_hrs, GCS, Infarct_Volume_cm3, Cerebellar_Infarct, Hypertension, Diabetes, Infection)
       LogComplicationsProbabilityAnswer, LogComplicationsProbabilityPercent = LogisticRegressionComplicationsProbabilityFunc(Age, Sex, Stroke_Type, Time_to_Surgery_hrs, GCS, Infarct_Volume_cm3, Cerebellar_Infarct, Hypertension, Diabetes, Infection)
 
-      #LogComplicationsProbabilityAnswer, LogComplicationsProbabilityPercent = LogisticRegressionComplicationsProbabilityFunc(Initial_GCS, Age, Hematoma_size_ml, Midline_shift_mm, Time_to_surgery_h, ICP_max_to_surgery, Concomitant_traumas, Neurological_outcome_scale)
-      #SurvivalProbabilityAnswer, SurvivalProbabilityPercent = RandomForestSurvivalProbabilityFunc(Initial_GCS, Age, Hematoma_size_ml, Midline_shift_mm, Time_to_surgery_h, ICP_max_to_surgery, Concomitant_traumas, Neurological_outcome_scale)
-      #feature_importance_dict, NeurologicalOutcomeProbabilityAnswer, NeurologicalOutcomeProbabilityPercent  = NeurologicalOutcomeFunc(Initial_GCS, Age, Hematoma_size_ml, Midline_shift_mm, Time_to_surgery_h, ICP_max_to_surgery, Concomitant_traumas)
       bot.send_message(chat_id,
 
       '\n - Complication ' + str(ComplicationsProbabilityAnswer)+
@@ -780,48 +778,46 @@ def predict_DecompressiveHemicraniectomy_complication_step(message):
 
       markup = types.ReplyKeyboardMarkup(one_time_keyboard=False)
       markup.add(YesNo_dict_1)
-      msg = bot.reply_to(message, 'Predict Cox Summary(survival or the risk of an event or death)', reply_markup=markup)
-      bot.register_next_step_handler(msg, predict_Cox_step)
+      msg = bot.reply_to(message, 'Predict survival', reply_markup=markup)
+      bot.register_next_step_handler(msg, predict_survival_step)
 
   except Exception as e:
     bot.reply_to(message, 'oooops predict_DecompressiveHemicraniectomy_complication_step')
 
 
-def predict_Cox_step(message):
-  try:
-    chat_id = message.chat.id
-    Predict_Complication = message.text
-    if (Predict_Complication == YesNo_dict_0) or (Predict_Complication == YesNo_dict_1):
+#def predict_Cox_step(message):
+#  try:
+#    chat_id = message.chat.id
+#    Cox_message = message.text
+#    if (Cox_message == YesNo_dict_0) or (Cox_message == YesNo_dict_1):
+#
+#      bot.send_message(message.chat.id, "📊 CoxPH Model Summary:\n\n" + coeffs_msg +
+#      '\n\n' + coeffs_msg_significant + '''
+#\n A p-value tests whether the observed effect (e.g. age increases risk) could have happened by chance.
 
-      bot.send_message(message.chat.id, "📊 CoxPH Model Summary:\n\n" + coeffs_msg +
-      '\n\n' + coeffs_msg_significant + '''
-\n A p-value tests whether the observed effect (e.g. age increases risk) could have happened by chance.
+#p < 0.05 → result is statistically significant
 
-p < 0.05 → result is statistically significant
+#p ≥ 0.05 → result is not significant → could be noise
 
-p ≥ 0.05 → result is not significant → could be noise
+#So, filtering to only p < 0.05 lets us focus on paremetrs that likely truly affect survival''' +
+#                       '\n\n' +
+#                       '''Cox Proportional Hazards Model:
 
-So, filtering to only p < 0.05 lets us focus on paremetrs that likely truly affect survival''' +
-                       '\n\n' +
-                       '''Cox Proportional Hazards Model:
+#🧠 What is CoxPH?
+#CoxPH (Cox proportional hazards model) is a statistical method that allows us to analyze "survival" or the risk of an event(death) occurring over time (e.g., death, complication, discharge).
 
-🧠 What is CoxPH?
-CoxPH (Cox proportional hazards model) is a statistical method that allows us to analyze "survival" or the risk of an event(death) occurring over time (e.g., death, complication, discharge).
+#Hazard Ratio
+#Relative risk: HR > 1 — increases risk, HR < 1 — reduces
+#'''
+#      )
 
-Hazard Ratio
-Relative risk: HR > 1 — increases risk, HR < 1 — reduces
+#      markup = types.ReplyKeyboardMarkup(one_time_keyboard=False)
+#      markup.add(YesNo_dict_1)
+#      msg = bot.reply_to(message, 'Predict survival?', reply_markup=markup)
+#      bot.register_next_step_handler(msg, predict_survival_step)
 
-
-'''
-      )
-
-      markup = types.ReplyKeyboardMarkup(one_time_keyboard=False)
-      markup.add(YesNo_dict_1)
-      msg = bot.reply_to(message, 'Predict survival?', reply_markup=markup)
-      bot.register_next_step_handler(msg, predict_survival_step)
-
-  except Exception as e:
-    bot.reply_to(message, 'oooops predict_Cox_step')
+#  except Exception as e:
+#    bot.reply_to(message, 'oooops predict_Cox_step')
 
 def predict_survival_step(message):
   try:
@@ -860,15 +856,57 @@ def Neurological_outcome_step(message):
 
       '______________________________________' +
       '\n\n - Importance of the factors that affect on neurological outcome\n' +
-      str(feature_importance_dict) + 
-      '\n\n Go to @Thrombolysis_bot'
+      str(feature_importance_dict)
       )
       markup = types.ReplyKeyboardMarkup(one_time_keyboard=False)
-      markup.add('Спробувати знову')
-      msg = bot.reply_to(message, 'Спробувати знову або переходьте на @Brain_Injury_Contusion_bot (Craniotomy treatment)', reply_markup=markup)
-      bot.register_next_step_handler(msg, send_welcome)
+      markup.add(YesNo_dict_1)
+      msg = bot.reply_to(message, 'Recommendations', reply_markup=markup)
+      bot.register_next_step_handler(msg, Recommendations_step)
   except Exception as e:
     bot.reply_to(message, 'oooops Neurological_outcome_step')
 
 
+def Recommendations_step(message):
+  try:
+    chat_id = message.chat.id
+
+    Recomendations_message = message.text
+    if (Recomendations_message == YesNo_dict_0) or (Recomendations_message == YesNo_dict_1):
+      new_patient = {
+      'Age': Age,
+      'Sex': Sex,
+      'Stroke_Type': Stroke_Type,
+      'Time_to_Surgery_hrs': Time_to_Surgery_hrs,
+      'GCS': GCS,
+      'Infarct_Volume_cm3': Infarct_Volume_cm3,
+      'Cerebellar_Infarct': Cerebellar_Infarct,
+      'Hypertension': Hypertension,
+      'Diabetes': Diabetes,
+      'Infection': Infection
+      }
+
+      best_treatment, effectiveness_results_str_dic = recommend_best_treatment(new_patient)
+      Decompressive_Hemicraniectomy = effectiveness_results_str_dic['Decompressive Hemicraniectomy']
+      Hypothermia = effectiveness_results_str_dic['Hypothermia']
+      Drug_therapy = effectiveness_results_str_dic['Drug therapy']
+
+      bot.send_message(chat_id,
+      '\n\n - Recommended treatment: \n' + str(best_treatment) + ' (highest efficiency)' +
+
+      '\n\nPredicted effectiveness for each type of treatment: ' +
+      '\nDecompressive Hemicraniectomy:  '  + str(Decompressive_Hemicraniectomy) + ' %'+
+      '\nHypothermia:  '  + str(Hypothermia) + ' %'+
+      '\nDrug therapy:  '  + str(Drug_therapy) + ' %'+
+
+      '\n\n Go to @Thrombolysis_bot(Thrombolysis)' +
+      '\n\n Go to @Brain_Injury_Contusion_bot (Craniotomy treatment)'
+      )
+      markup = types.ReplyKeyboardMarkup(one_time_keyboard=False)
+      markup.add('Далі')
+      msg = bot.reply_to(message, 'Спробувати знову.', reply_markup=markup)
+      bot.register_next_step_handler(msg, send_welcome)
+  except Exception as e:
+    bot.reply_to(message, 'oooops Recommendations_step')
+
+#The end
 bot.infinity_polling()
