@@ -522,9 +522,9 @@ def process_Password_step(message):
       markup.add('Next')
       msg = bot.reply_to(message, 'You are welcome. Please press Next to continue', reply_markup=markup)
       bot.register_next_step_handler(msg, process_Eye_Opening_step)
-#    else:
-#      msg = bot.reply_to(message, '❌ Incorrect password. Please try again.')
-#      bot.register_next_step_handler(msg, process_Password_step)
+    else:
+      msg = bot.reply_to(message, '❌ Incorrect password. Please try again.')
+      bot.register_next_step_handler(msg, process_Password_step)
   except Exception as e:
     bot.reply_to(message, 'oooops process_Password_step')
 
@@ -909,4 +909,5 @@ def Recommendations_step(message):
     bot.reply_to(message, 'oooops Recommendations_step')
 
 #The end
-bot.infinity_polling()
+#bot.infinity_polling()
+bot.polling(timeout=10, long_polling_timeout=10)
